@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 actix-web = "4"
 leptos = "0.4.2"
+sled = "0.34.7"
