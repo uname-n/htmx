@@ -1,13 +1,13 @@
 use leptos::*;
 
 #[component]
-pub fn TodoForm(cx: Scope) -> impl IntoView {
+pub fn TodoForm(cx: Scope, todo_list: Vec<String>) -> impl IntoView {
     return view! {cx,
         <form>
             <input type="text" name="item" placeholder="add item"/>
             <button>"Add item"</button>
         </form>
-        <Todos todo_list=Vec::new()/>
+        <Todos todo_list=todo_list/>
     }
 }
 

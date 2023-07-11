@@ -14,7 +14,7 @@ pub fn App(cx: Scope, counter: usize) -> impl IntoView {
             <form hx-trigger="submit" hx-post="/clicked" hx-target="#counter" hx-swap="outerHTML">
                 <button>"click me"</button>
             </form>
-            <TodoForm/>
+            <TodoForm todo_list=Vec::new()/>
         </body>
     }
 }
