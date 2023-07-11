@@ -4,7 +4,7 @@ use leptos::*;
 use crate::html;
 use crate::state;
 
-use crate::counter::Counter;
+use crate::component::counter::Counter;
 
 #[get("/")]
 async fn index(data: web::Data<state::AppState>) -> HttpResponse {

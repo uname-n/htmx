@@ -5,7 +5,7 @@ mod util;
 mod state;
 mod routes;
 
-mod counter;
+mod component;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -15,7 +15,9 @@ async fn main() -> std::io::Result<()> {
                 counter: AtomicUsize::new(0)
             }))
             .service(routes::index)
-            .service(counter::clicked)
+
+            .service(component::counter::clicked)
+
     })
     .bind(("127.0.0.1", 8080))?
     .run()
