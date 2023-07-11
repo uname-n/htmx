@@ -2,12 +2,25 @@ use actix_web::{get, post, web, App, HttpServer, HttpResponse};
 use std::sync::atomic::AtomicUsize;
 use leptos::*;
 
+macro_rules! html {
+    ($($body:tt)*) => {{
+        let html  = leptos::ssr::render_to_string(move |cx| view! { cx, $($body)* });
+        HttpResponse::Ok()
+            .content_type("text/html; charset=utf-8")
+            .body(html)
+    }};
+}
+
+//
+
 struct AppState {
     counter: AtomicUsize
 }
 
+//
+
 #[component]
-fn counter(cx: Scope, count:usize) -> impl IntoView {
+fn Counter(cx: Scope, count:usize) -> impl IntoView {
     return view! {cx,
         <div id="counter">"Current Count: " {format!("{}", count)}</div>
     }
@@ -16,20 +29,19 @@ fn counter(cx: Scope, count:usize) -> impl IntoView {
 #[post("/clicked")]
 async fn clicked(data: web::Data<AppState>) -> HttpResponse {
     let counter = data.counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
-    let html  = leptos::ssr::render_to_string(move |cx| view! { cx, 
+    return html!{ 
         <Counter count=counter/>
-    });
-    return HttpResponse::Ok() 
-        .content_type("text/html; charset=utf-8")
-        .body(html)
+    }
 }
+
+// 
 
 #[get("/")]
 async fn index(data: web::Data<AppState>) -> HttpResponse {
     let counter = data.counter.load(std::sync::atomic::Ordering::Relaxed);
-    let html  = leptos::ssr::render_to_string(move |cx| view! { cx,
+    return html! {
         <head>
-            <script src="https://unpkg.com/htmx.org@1.9.2"/>
+            <script src="https://unpkg.com/htmx.org@1.9.2"></script>
         </head>
         <body>
             <Counter count=counter/>
@@ -37,10 +49,7 @@ async fn index(data: web::Data<AppState>) -> HttpResponse {
                 <button>"click me"</button>
             </form>
         </body>
-    });
-    return HttpResponse::Ok()
-        .content_type("text/html; charset=utf-8")
-        .body(html)
+    }
 }
 
 #[actix_web::main]
