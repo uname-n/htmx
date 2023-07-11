@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4"
-maud = { version = "*", features = ["actix-web"] }
+leptos = "0.4.2"

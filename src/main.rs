@@ -1,37 +1,46 @@
-use actix_web::{get, web, App, HttpServer, Result as AwResult};
-use maud::{DOCTYPE, html, Markup, PreEscaped};
-use std::sync::atomic::{AtomicUsize};
+use actix_web::{get, post, web, App, HttpServer, HttpResponse};
+use std::sync::atomic::AtomicUsize;
+use leptos::*;
 
 struct AppState {
     counter: AtomicUsize
 }
 
-#[get("/")]
-async fn index(_data: web::Data<AppState>) -> AwResult<Markup> {
-    Ok(html! {
-        html {
-            (DOCTYPE)
-            (PreEscaped("<script src=\"https://unpkg.com/htmx.org@1.9.2\"></script>"))
-            body {
-                h1 {
-                    "Current Count: ";
-                    span id="counting" hx-trigger="load" hx-get="/clicked" hx-target="this" hx-swap="innerHTML";
-                }
-                form hx-trigger="submit" hx-get="/clicked" hx-target="#counting" hx-swap="innerHTML" {
-                    input type="text" name="input_value" value="Placeholder";
-                    button { "click me" };
-                }
-            }
-        }
-    })
+#[component]
+fn counter(cx: Scope, count:usize) -> impl IntoView {
+    return view! {cx,
+        <div id="counter">"Current Count: " {format!("{}", count)}</div>
+    }
 }
 
-#[get("/clicked")]
-async fn clicked(data: web::Data<AppState>) -> AwResult<Markup> {
-    let counter = data.counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    Ok(html! {
-        span { (counter) }
-    })
+#[post("/clicked")]
+async fn clicked(data: web::Data<AppState>) -> HttpResponse {
+    let counter = data.counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+    let html  = leptos::ssr::render_to_string(move |cx| view! { cx, 
+        <Counter count=counter/>
+    });
+    return HttpResponse::Ok() 
+        .content_type("text/html; charset=utf-8")
+        .body(html)
+}
+
+#[get("/")]
+async fn index(data: web::Data<AppState>) -> HttpResponse {
+    let counter = data.counter.load(std::sync::atomic::Ordering::Relaxed);
+    let html  = leptos::ssr::render_to_string(move |cx| view! { cx,
+        <head>
+            <script src="https://unpkg.com/htmx.org@1.9.2"/>
+        </head>
+        <body>
+            <Counter count=counter/>
+            <form hx-trigger="submit" hx-post="/clicked" hx-target="#counter" hx-swap="outerHTML">
+                <button>"click me"</button>
+            </form>
+        </body>
+    });
+    return HttpResponse::Ok()
+        .content_type("text/html; charset=utf-8")
+        .body(html)
 }
 
 #[actix_web::main]
