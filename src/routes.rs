@@ -7,10 +7,8 @@ use crate::state;
 use crate::app::App;
 
 #[get("/")]
-async fn index(data: web::Data<state::AppState>) -> HttpResponse {
-    let counter = data.counter.load(std::sync::atomic::Ordering::Relaxed);
-    let todo_list = data.todo_list.lock().unwrap().clone();
+async fn index(_data: web::Data<state::AppState>) -> HttpResponse {
     return html! {
-        <App counter=counter todo_list=todo_list/>
+        <App/>
     }
 }

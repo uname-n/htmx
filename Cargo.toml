@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 actix-web = "4"
 leptos = "0.4.2"
+libsql-client = "0.31.8"
 serde = "1.0.171"

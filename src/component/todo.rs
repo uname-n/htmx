@@ -1,45 +1,93 @@
-use actix_web::{post, web, HttpResponse};
+use actix_web::{get, post, web, HttpResponse};
 use leptos::*;
 use serde::Deserialize;
+use libsql_client::{Statement, args};
 
 use crate::html;
 use crate::state;
 
+#[derive(Clone, Deserialize)]
+pub struct Todo {
+    id: Option<i64>,
+    data: String,
+    completed: Option<bool>,
+}
+
 #[component]
-pub fn TodoForm(cx: Scope, todo_list: Vec<String>) -> impl IntoView {
+fn TodoItem(cx: Scope, todo: Todo) -> impl IntoView {
     return view! {cx,
-        <form hx-trigger="submit" hx-post="/todo/add" hx-target="#todo_list" hx-swap="outerHTML" hx-ext="json-enc">
-            <input type="text" name="item" placeholder="add item"/>
+        <li id=todo.id>
+            <span>{todo.data}</span>
+        </li>
+    }
+}
+
+#[component]
+pub fn TodoForm(cx: Scope) -> impl IntoView {
+    return view! {cx,
+        <form 
+            hx-trigger="submit" 
+            hx-post="/todo/add" 
+            hx-target="#todo_list" 
+            hx-swap="beforeend" 
+            hx-ext="json-enc"
+            >
+            <input type="text" name="data" placeholder="add item"/>
             <button>"Add item"</button>
         </form>
-        <Todos todo_list=todo_list/>
+        <Todos/>
     }
 }
 
 #[component]
-pub fn Todos(cx: Scope, todo_list: Vec<String>) -> impl IntoView {
+fn Todos(cx: Scope) -> impl IntoView {
     return view! {cx,
-        <ul id="todo_list">
-            {todo_list.into_iter()
-                .map(|n| view! { cx, <li>{n}</li>})
-                .collect_view(cx)}
-        </ul>
+        <ul id="todo_list"
+            hx-trigger="load"
+            hx-get="/todo/get"
+            hx-swap="innerHTML"
+        />
     }
 }
 
-#[derive(Deserialize)]
-struct TodoAdd {
-    item: String,
+#[get("/todo/get")]
+async fn todo_get(data: web::Data<state::AppState>) -> HttpResponse {
+    let todos = data.client.execute(Statement::new("SELECT * FROM todo")).await.unwrap();
+    
+    let mut todo_item: Vec<Todo> = Vec::new();
+    for row in todos.rows {
+        let id: i64 = row.try_column("id").unwrap();
+        let data: &str = row.try_column("data").unwrap();
+        let completed: usize = row.try_column("completed").unwrap();
+
+        let todo = Todo {
+            id: Some(id),
+            data: data.to_string(),
+            completed: Some(completed == 1),
+        };
+
+        todo_item.push(todo);
+    }
+    
+    return html! { 
+        <For
+            each=move || todo_item.clone()
+            key=|todo| todo.id.unwrap()
+            view=move |cx, todo| view! {cx, <TodoItem todo=todo.clone()/> }
+        />
+    }
 }
 
 #[post("/todo/add")]
-async fn todo_add(req: web::Json<TodoAdd>, data: web::Data<state::AppState>) -> HttpResponse {
-    let mut todo_list = data.todo_list.lock().unwrap();
-    todo_list.push(req.item.clone());
+async fn todo_add(req: web::Json<Todo>, data: web::Data<state::AppState>) -> HttpResponse {
+    let result = data.client.execute(Statement::with_args(
+        "INSERT INTO todo (data) VALUES (?)", args![&req.data]
+    )).await.unwrap();
 
-    let new_todo_list = todo_list.clone();
+    let mut req = req.into_inner();
+    req.id = result.last_insert_rowid;
 
     return html! { 
-        <Todos todo_list=new_todo_list/>
+        <TodoItem todo=req/>
     }
 }
