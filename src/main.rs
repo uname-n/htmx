@@ -14,6 +14,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(state::AppState::new()))
             .service(routes::index)
             .service(component::counter::clicked)
+            .service(component::todo::todo_add)
     })
     .bind(("127.0.0.1", 8080))?
     .run()
