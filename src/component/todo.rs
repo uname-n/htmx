@@ -23,11 +23,11 @@ fn TodoItem(cx: Scope, todo: Todo) -> impl IntoView {
 }
 
 #[component]
-pub fn TodoForm(cx: Scope) -> impl IntoView {
+pub fn TodoForm(cx: Scope, host:String) -> impl IntoView {
     return view! {cx,
         <form 
             hx-trigger="submit" 
-            hx-post="/todo/add" 
+            hx-post=format!("{}/todo/add", host) 
             hx-target="#todo_list" 
             hx-swap="beforeend" 
             hx-ext="json-enc"
@@ -35,16 +35,16 @@ pub fn TodoForm(cx: Scope) -> impl IntoView {
             <input type="text" name="data" placeholder="add item"/>
             <button>"Add item"</button>
         </form>
-        <Todos/>
+        <Todos host=host/>
     }
 }
 
 #[component]
-fn Todos(cx: Scope) -> impl IntoView {
+fn Todos(cx: Scope, host:String) -> impl IntoView {
     return view! {cx,
         <ul id="todo_list"
             hx-trigger="load"
-            hx-get="/todo/get"
+            hx-get=format!("{}/todo/get", host) 
             hx-swap="innerHTML"
         />
     }

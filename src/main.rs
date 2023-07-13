@@ -7,6 +7,7 @@ mod component;
 
 use std::sync::Arc;
 use actix_web::{web, App, HttpServer};
+use actix_cors::Cors;
 
 use libsql_client::{Config, Client};
 
@@ -28,13 +29,19 @@ async fn main() -> std::io::Result<()> {
     });
 
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header();
+
         App::new()
+            .wrap(cors)
             .app_data(app_state.clone())
             .service(routes::index)
             .service(component::todo::todo_get)
             .service(component::todo::todo_add)
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("0.0.0.0", 8080))?
     .run()
     .await
 }
