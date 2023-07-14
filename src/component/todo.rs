@@ -16,7 +16,10 @@ pub struct Todo {
 #[component]
 fn TodoItem(cx: Scope, todo: Todo) -> impl IntoView {
     return view! {cx,
-        <li id=todo.id>
+        <li 
+            id=todo.id 
+            class="list-group-item"
+            >
             <span>{todo.data}</span>
         </li>
     }
@@ -24,8 +27,8 @@ fn TodoItem(cx: Scope, todo: Todo) -> impl IntoView {
 
 #[component]
 pub fn TodoForm(cx: Scope, host:String) -> impl IntoView {
-    return view! {cx,
-        <div class="container-fluid">
+    return view! {cx, // <style>{include_str!("todo.css")}</style>
+        <div class="container-fluid p-4">
             <form 
                 hx-trigger="submit" 
                 hx-post=format!("{}/todo/add", host) 
@@ -33,13 +36,12 @@ pub fn TodoForm(cx: Scope, host:String) -> impl IntoView {
                 hx-swap="beforeend" 
                 hx-ext="json-enc"
                 >
-                <div class="input-group mx-auto p-4">
+                <div class="input-group">
                     <input type="text" class="form-control" name="data" placeholder="add item"/>
-                    <button class="btn btn-primary">"Add"</button>
                 </div>
             </form>
+            <Todos host=host/>
         </div>
-        <Todos host=host/>
     }
 }
 
@@ -47,6 +49,7 @@ pub fn TodoForm(cx: Scope, host:String) -> impl IntoView {
 fn Todos(cx: Scope, host:String) -> impl IntoView {
     return view! {cx,
         <ul id="todo_list"
+            class="list-group"
             hx-trigger="load"
             hx-get=format!("{}/todo/get", host) 
             hx-swap="innerHTML"
@@ -84,6 +87,10 @@ async fn todo_get(data: web::Data<state::AppState>) -> HttpResponse {
 
 #[post("/todo/add")]
 async fn todo_add(req: web::Json<Todo>, data: web::Data<state::AppState>) -> HttpResponse {
+    if &req.data == "" {
+        return HttpResponse::BadRequest().finish();
+    }
+    
     let result = data.client.execute(Statement::with_args(
         "INSERT INTO todo (data) VALUES (?)", args![&req.data]
     )).await.unwrap();
